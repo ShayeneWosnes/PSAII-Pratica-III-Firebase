@@ -1,22 +1,51 @@
+
 import { createDrawerNavigator } from "@react-navigation/drawer";
-import StackNavigator from "./StackNavigator";
 import { Ionicons } from "@expo/vector-icons";
+
+import StackNavigator from "./StackNavigator";
 import PageIFPR from "../pages/PageIFPR";
-import PageCadastro from "../pages/PageCadastro";
-import PageLogin from "../pages/PageLogin";
+import PagePerfil from "../pages/PagePerfil";
 
 const Drawer = createDrawerNavigator();
 
 function DrawerNavigator() {
     return (
         <Drawer.Navigator>
-            <Drawer.Screen name="Início" component={StackNavigator}
+            <Drawer.Screen
+                name="Início"
+                component={StackNavigator}
                 options={{
-                    drawerIcon: () => <Ionicons name="home" size={24} color="blue" />
-                }} />
-            <Drawer.Screen name="IFPR" component={PageIFPR} />
+                    drawerIcon: ({ color, size }) => (
+                        <Ionicons name="home" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            <Drawer.Screen
+                name="IFPR"
+                component={PageIFPR}
+                options={{
+                    drawerIcon: ({ color, size }) => (
+                        <Ionicons name="school" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            <Drawer.Screen
+                name="Meu Perfil"
+                component={PagePerfil}
+                options={{
+                    drawerIcon: ({ color, size }) => (
+                        <Ionicons
+                            name="person-circle-outline"
+                            size={size}
+                            color={color}
+                        />
+                    ),
+                }}
+            />
         </Drawer.Navigator>
-    )
+    );
 }
 
 export default DrawerNavigator;

@@ -2,14 +2,22 @@ import { ScrollView } from "react-native";
 import { Button, Text, TextInput, Card } from "react-native-paper";
 import useAuthService from "../services/loginService";
 import { useState } from "react";
+import { useNavigation } from "@react-navigation/native";
 
 function PageLogin() {
     const [usuario, setUsuario] = useState({})
     const [secureText, setSecureText] = useState(true)
     const [loading, setLoading] = useState(false)
     const { loginEmailSenha, recuperarSenha } = useAuthService()
+    const navigation = useNavigation();
 
     async function logarUsuario() {
+
+        if (!usuario.email?.trim() || !usuario.senha) {
+            alert("Preencha o e-mail e a senha para entrar.");
+            return;
+        }
+
         try {
             setLoading(true)
             await loginEmailSenha(usuario)
@@ -23,6 +31,10 @@ function PageLogin() {
     }
 
     async function recuperarSenhaUsuario() {
+        if (!usuario.email?.trim()) {
+            alert("Informe seu e-mail para recuperar a senha.");
+            return;
+        }
         try {
             setLoading(true)
             await recuperarSenha(usuario)
@@ -66,6 +78,18 @@ function PageLogin() {
                     <Button loading={loading}
                         onPress={() => recuperarSenhaUsuario()}>
                         Recuperar Senha</Button>
+
+                    <Text style={{ textAlign: "center", marginTop: 20 }}>
+                        Ainda não possui uma conta?
+                    </Text>
+
+                    <Button
+                        mode="outlined"
+                        onPress={() => navigation.navigate("Cadastro")}
+                        style={{ marginTop: 10 }}
+                    >
+                        Criar uma conta
+                    </Button>
                 </Card.Content>
             </Card>
         </ScrollView>

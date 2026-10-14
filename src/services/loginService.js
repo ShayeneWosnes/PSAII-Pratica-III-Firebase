@@ -1,42 +1,88 @@
 import {
-    createUserWithEmailAndPassword, // Função importada para criar o usuário
-    signInWithEmailAndPassword, // Função importada para o login
-    sendPasswordResetEmail, // Função importada para redefinição de senha
-    sendEmailVerification, // Função importada para verificar o e-mail
-    signOut
-} from 'firebase/auth';
-import { auth } from '../../firebase-init';
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    sendPasswordResetEmail,
+    sendEmailVerification,
+    signOut,
+} from "firebase/auth";
+
+import {
+    doc,
+    setDoc,
+    getDoc,
+} from "firebase/firestore";
+
+import { auth, db } from "../../firebase-init";
+import { Usuario, usuarioConverter } from "../models/Usuario";
 
 function useAuthService() {
 
-    const cadastrarEmailSenha = async (usuario) => {
-        try {
-            const userCredential = await createUserWithEmailAndPassword(auth, usuario.email, usuario.senha);
-            await sendEmailVerification(userCredential.user); // Se você precisa de confirmação de e-mail
-            await signOut(auth); // Desloga o usuário após o cadastro
-        } catch (error) {
-            throw error;
-        }
-    }
+    const cadastrarEmailSenha = async (dadosUsuario) => {
+        const userCredential = await createUserWithEmailAndPassword(
+            auth,
+            dadosUsuario.email,
+            dadosUsuario.senha
+        );
 
-    const loginEmailSenha = async (usuario) => {
-        try {
-            const userCredential = await signInWithEmailAndPassword(auth, usuario.email, usuario.senha);
-            return userCredential
-        } catch (error) {
-            throw error;
-        }
-    }
+        const uid = userCredential.user.uid;
 
-    const recuperarSenha = async (usuario) => {
         try {
-            await sendPasswordResetEmail(auth, usuario.email);
-        } catch (error) {
-            throw error;
-        }
-    }
+            const usuario = new Usuario({
+                id: uid,
+                nome: dadosUsuario.nome,
+                email: dadosUsuario.email,
+                telefone: dadosUsuario.telefone,
+            });
 
-    return { cadastrarEmailSenha, loginEmailSenha, recuperarSenha };
+            const usuarioRef = doc(db, "Usuarios", uid)
+                .withConverter(usuarioConverter);
+
+            await setDoc(usuarioRef, usuario);
+
+            await sendEmailVerification(userCredential.user);
+        } finally {
+            await signOut(auth);
+        }
+    };
+
+    const loginEmailSenha = async (dadosUsuario) => {
+        const userCredential = await signInWithEmailAndPassword(
+            auth,
+            dadosUsuario.email,
+            dadosUsuario.senha
+        );
+
+        await userCredential.user.reload();
+
+        if (!userCredential.user.emailVerified) {
+            await signOut(auth);
+            throw new Error("Confirme seu e-mail antes de entrar.");
+        }
+
+        const uid = userCredential.user.uid;
+
+        const usuarioRef = doc(db, "Usuarios", uid)
+            .withConverter(usuarioConverter);
+
+        const usuarioDoc = await getDoc(usuarioRef);
+
+        if (!usuarioDoc.exists()) {
+            await signOut(auth);
+            throw new Error("Dados do usuário não encontrados no Firestore.");
+        }
+
+        return usuarioDoc.data();
+    };
+
+    const recuperarSenha = async (dadosUsuario) => {
+        await sendPasswordResetEmail(auth, dadosUsuario.email);
+    };
+
+    return {
+        cadastrarEmailSenha,
+        loginEmailSenha,
+        recuperarSenha,
+    };
 }
 
 export default useAuthService;
